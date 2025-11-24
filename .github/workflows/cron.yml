@@ -1,0 +1,60 @@
+name: Reservas Gym
+
+on:
+  
+  
+
+  schedule:
+
+  # Lunes
+  - cron: "45 4 * * 1"  
+  
+  # Martes
+  - cron: "45 4 * * 2"   
+
+  # Miércoles
+  - cron: "45 4 * * 3"   
+  # Jueves
+  - cron: "45 4 * * 4"   
+
+  # Viernes
+  - cron: "45 4 * * 5"   
+
+  # Sábado
+  - cron: "45 4 * * 6" 
+
+  # Domingo
+  - cron: "45 4 * * 0"
+
+  # Permite lanzarlo manualmente desde GitHub (Actions → Run workflow)
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Europe/Madrid # 🔹 Fuerza la zona horaria a Madrid
+      APP_USERNAME: ${{ secrets.APP_USERNAME }}
+      APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Debug env
+        run: |
+          echo "APP_USERNAME length: ${#APP_USERNAME}"
+          echo "APP_PASSWORD length: ${#APP_PASSWORD}"
+
+      - name: Run script
+        run: python programaGym.py
