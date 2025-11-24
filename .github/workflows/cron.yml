@@ -9,19 +9,14 @@ on:
   # Lunes
   - cron: "45 4 * * 1"  
   
-  # Martes
-  - cron: "45 4 * * 2"   
-
   # Miércoles
   - cron: "45 4 * * 3"   
+
   # Jueves
   - cron: "45 4 * * 4"   
 
   # Viernes
   - cron: "45 4 * * 5"   
-
-  # Sábado
-  - cron: "45 4 * * 6" 
 
   # Domingo
   - cron: "45 4 * * 0"
