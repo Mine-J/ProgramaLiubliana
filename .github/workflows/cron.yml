@@ -9,6 +9,9 @@ on:
   # Lunes
   - cron: "45 4 * * 1"  
   
+  # Martes
+  - cron: "45 4 * * 2"
+  
   # Miércoles
   - cron: "45 4 * * 3"   
 
