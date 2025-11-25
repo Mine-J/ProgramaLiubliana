@@ -1,2 +1,2 @@
 
-        # Crear una nueva página
+    print("FASE 2: CONFIGURACIÓN INICIAL")
