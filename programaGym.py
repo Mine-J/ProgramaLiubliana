@@ -180,8 +180,11 @@ def abrir_pagina():
         print("\n🔐 Iniciando sesión...")
         page.wait_for_selector('button.t_440877_login')
         page.click('button.t_440877_login')
-        page.wait_for_timeout(2000)
-        print("✓✓✓ Sesión iniciada correctamente\n")
+        
+        # Esperar a que se complete el login
+        print("⏳ Esperando a que se complete el login...")
+        page.wait_for_timeout(5000)
+        print("✓✓✓ Sesión iniciada\n")
         
         print("\n" + "="*60)
         print("FASE 4: BÚSQUEDA CONTINUA HASTA CONSEGUIR RESERVA")
@@ -198,19 +201,9 @@ def abrir_pagina():
             print(f"{'='*60}\n")
             
             try:
-                print("📍 Navegando a la página principal...")
-                page.goto('https://popr.uni-lj.si/user/home.html?currentUserLocale=es')
-                page.wait_for_timeout(2000)
-                print("✓ Página principal cargada")
-                
-                print("\n🖱️ Abriendo menú 'Book'...")
-                page.wait_for_selector('a.nav-link.dropdown-toggle[title="Book"]')
-                page.click('a.nav-link.dropdown-toggle[title="Book"]')
-                print("✓ Menú 'Book' abierto")
-                
-                print("\n🖱️ Haciendo click en 'Events'...")
-                page.wait_for_selector('a.nav-link[title="Events"][href="/menu/user/events/book"]')
-                page.click('a.nav-link[title="Events"][href="/menu/user/events/book"]')
+                print("📍 Navegando directamente a la página de eventos...")
+                page.goto('https://popr.uni-lj.si/user/events.html?execution=e1s1')
+                page.wait_for_timeout(3000)
                 print("✓ Página de eventos cargada")
                 
                 print("\n⏳ Esperando resultados de búsqueda...")
@@ -371,6 +364,15 @@ def abrir_pagina():
                 
             except Exception as e:
                 print(f"\n❌ Error en el intento #{intento_actual}: {str(e)}")
+                
+                # Guardar screenshot del error para debug
+                try:
+                    screenshot_path = f"debug_error_intento_{intento_actual}.png"
+                    page.screenshot(path=screenshot_path)
+                    print(f"📸 Screenshot del error guardado: {screenshot_path}")
+                except:
+                    print("⚠️ No se pudo guardar screenshot del error")
+                
                 tiempo_espera = 15
                 print(f"⏳ Esperando {tiempo_espera} segundos antes de reintentar...")
                 page.wait_for_timeout(tiempo_espera * 1000)

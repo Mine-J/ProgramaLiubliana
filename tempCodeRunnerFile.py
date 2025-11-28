@@ -1,2 +1,2 @@
 
-    print("FASE 2: CONFIGURACIÓN INICIAL")
+    
