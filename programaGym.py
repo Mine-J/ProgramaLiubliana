@@ -132,7 +132,7 @@ def abrir_pagina():
         print("🌐 Lanzando navegador Chrome...")
         # Configuración optimizada para modo headless
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 '--disable-blink-features=AutomationControlled',  # Evitar detección de bot
                 '--disable-dev-shm-usage',  # Para evitar crashes
@@ -225,7 +225,8 @@ def abrir_pagina():
                 
                 hoy = datetime.now()
                 dia_semana = hoy.weekday()
-                fecha_hoy = hoy.strftime('%d-%b-%Y').lower()
+                meses_es_abrev = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+                fecha_hoy = f"{hoy.day:02d}-{meses_es_abrev[hoy.month-1]}-{hoy.year}"
                 
                 dias_nombres = {
                     0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 
