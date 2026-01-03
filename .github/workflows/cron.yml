@@ -1,22 +1,22 @@
 name: Reservas Gym
 
 on:
-  # schedule:
+  schedule:
 
-  # # Lunes
-  # - cron: "45 4 * * 1"  
+  # Lunes
+  - cron: "45 4 * * 1"  
   
-  # # Miércoles
-  # - cron: "45 4 * * 3"   
+  # Miércoles
+  - cron: "45 4 * * 3"   
 
-  # # Jueves
-  # - cron: "45 4 * * 4"   
+  # Jueves
+  - cron: "45 4 * * 4"   
 
-  # # Viernes
-  # - cron: "45 4 * * 5"   
+  # Viernes
+  - cron: "45 4 * * 5"   
 
-  # # Domingo
-  # - cron: "45 4 * * 0"
+  # Domingo
+  - cron: "45 4 * * 0"
 
   # Permite lanzarlo manualmente desde GitHub (Actions → Run workflow)
   workflow_dispatch:
