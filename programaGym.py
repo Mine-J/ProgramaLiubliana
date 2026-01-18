@@ -120,9 +120,9 @@ def abrir_pagina():
     print("\n" + "="*60)
     print("FASE 2: CONFIGURACIÓN INICIAL")
     print("="*60)
-    print(f"✓ Modo: REINTENTOS INFINITOS hasta completar reserva")
+    print(f"✓ Modo: MÁXIMO 10 INTENTOS")
     print(f"✓ Espera entre intentos: 10-30 segundos")
-    print(f"✓ El script NO se detendrá hasta conseguir la reserva")
+    print(f"✓ El script se detendrá después de 10 intentos")
     
     print("\n" + "="*60)
     print("FASE 3: INICIANDO NAVEGADOR Y SESIÓN")
@@ -187,15 +187,16 @@ def abrir_pagina():
         print("✓✓✓ Sesión iniciada\n")
         
         print("\n" + "="*60)
-        print("FASE 4: BÚSQUEDA CONTINUA HASTA CONSEGUIR RESERVA")
+        print("FASE 4: BÚSQUEDA CON LÍMITE DE INTENTOS")
         print("="*60)
         
         intento_actual = 1
+        MAX_INTENTOS = 10
         
-        # BUCLE INFINITO - Solo termina cuando consigue la reserva
-        while True:
+        # BUCLE CON LÍMITE - Termina cuando consigue la reserva o llega a 10 intentos
+        while intento_actual <= MAX_INTENTOS:
             print(f"\n{'='*60}")
-            print(f"🔄 INTENTO #{intento_actual}")
+            print(f"🔄 INTENTO #{intento_actual} DE {MAX_INTENTOS}")
             print(f"{'='*60}")
             print(f"⏰ Hora actual: {datetime.now().strftime('%H:%M:%S')}")
             print(f"{'='*60}\n")
@@ -357,9 +358,18 @@ def abrir_pagina():
                     tiempo_espera = 10
                 
                 # Esperar antes del siguiente intento
-                print(f"\n⏳ Esperando {tiempo_espera} segundos antes del siguiente intento...")
-                print(f"💪 Intento #{intento_actual} completado - Continuando...")
-                page.wait_for_timeout(tiempo_espera * 1000)
+                if intento_actual < MAX_INTENTOS:
+                    print(f"\n⏳ Esperando {tiempo_espera} segundos antes del siguiente intento...")
+                    print(f"💪 Intento #{intento_actual} completado - Continuando...")
+                    page.wait_for_timeout(tiempo_espera * 1000)
+                else:
+                    print(f"\n⏹️ Se alcanzó el límite máximo de {MAX_INTENTOS} intentos")
+                    print("🚪 Cerrando navegador...")
+                    page.wait_for_timeout(3000)
+                    context.close()
+                    browser.close()
+                    return
+                
                 intento_actual += 1
                 
             except Exception as e:
@@ -373,17 +383,26 @@ def abrir_pagina():
                 except:
                     print("⚠️ No se pudo guardar screenshot del error")
                 
-                tiempo_espera = 15
-                print(f"⏳ Esperando {tiempo_espera} segundos antes de reintentar...")
-                page.wait_for_timeout(tiempo_espera * 1000)
+                if intento_actual < MAX_INTENTOS:
+                    tiempo_espera = 15
+                    print(f"⏳ Esperando {tiempo_espera} segundos antes de reintentar...")
+                    page.wait_for_timeout(tiempo_espera * 1000)
+                else:
+                    print(f"\n⏹️ Se alcanzó el límite máximo de {MAX_INTENTOS} intentos")
+                    print("🚪 Cerrando navegador...")
+                    page.wait_for_timeout(3000)
+                    context.close()
+                    browser.close()
+                    return
+                
                 intento_actual += 1
 
 if __name__ == "__main__":
     print("\n" + "="*60)
     print("🏋️ SISTEMA DE RESERVAS AUTOMÁTICAS")
     print("="*60)
-    print("⚡ Modo: REINTENTOS INFINITOS")
-    print("🎯 El script continuará hasta conseguir la reserva")
+    print("⚡ Modo: MÁXIMO 10 INTENTOS")
+    print("🎯 El script se detendrá después de 10 intentos o al conseguir la reserva")
     print("="*60)
     abrir_pagina()
-    print("\n✅ Script finalizado - Reserva completada o no hay clase hoy")
+    print("\n✅ Script finalizado - Reserva completada, límite de intentos alcanzado o no hay clase hoy")
