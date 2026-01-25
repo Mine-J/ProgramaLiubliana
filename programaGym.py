@@ -219,6 +219,7 @@ def abrir_pagina():
                 horarios_por_dia = {
                     6: ('21:00', '22:30'),  # Domingo
                     0: ('18:00', '19:30'),  # Lunes
+                    1: ('12:00', '13:30'),  # Martes
                     2: ('10:30', '12:00'),  # Miércoles
                     3: ('19:30', '21:00'),  # Jueves
                     4: ('12:00', '13:30'),  # Viernes
