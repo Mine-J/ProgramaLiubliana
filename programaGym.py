@@ -154,7 +154,7 @@ def abrir_pagina():
         print("🌐 Lanzando navegador Chrome...")
         # Configuración optimizada para modo headless
         browser = p.chromium.launch(
-            headless=False,
+            headless=True,
             args=[
                 '--disable-blink-features=AutomationControlled',  # Evitar detección de bot
                 '--disable-dev-shm-usage',  # Para evitar crashes
