@@ -25,88 +25,110 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
     """Busca y reserva el slot de horario específico"""
     try:
         print(f"\n  📋 Esperando a que cargue la sección de bookings...")
-        page.wait_for_selector('#bookings', timeout=5000)
+        page.wait_for_selector('#bookings', timeout=10000)
+        page.wait_for_timeout(2000)  # Espera adicional para carga completa
         print(f"  ✓ Sección de bookings cargada")
         
         print(f"\n  🔍 Buscando slot de horario {hora_inicio_clase} - {hora_fin_clase}...")
-        slots = page.query_selector_all('div.row.no-gutters.align-items-center')
+        
+        # Re-obtener slots cada vez para evitar elementos obsoletos
+        def obtener_slots():
+            return page.query_selector_all('div.row.no-gutters.align-items-center')
+        
+        slots = obtener_slots()
         print(f"  ✓ Se encontraron {len(slots)} slots en total")
         
         print(f"\n  🔄 Revisando cada slot...")
-        for i, slot in enumerate(slots, 1):
-            horario_element = slot.query_selector('p.font-weight-semibold.mb-0')
-            
-            if horario_element:
-                horario_texto = horario_element.inner_text().strip()
-                print(f"  • Slot {i}: {horario_texto}")
+        for i in range(len(slots)):
+            try:
+                # Re-obtener slots en cada iteración para evitar handles obsoletos
+                slots_actuales = obtener_slots()
+                if i >= len(slots_actuales):
+                    continue
+                    
+                slot = slots_actuales[i]
+                horario_element = slot.query_selector('p.font-weight-semibold.mb-0')
                 
-                if hora_inicio_clase in horario_texto and hora_fin_clase in horario_texto:
-                    print(f"\n  ✓ ¡Slot correcto encontrado! {horario_texto}")
+                if horario_element:
+                    horario_texto = horario_element.inner_text().strip()
+                    print(f"  • Slot {i+1}: {horario_texto}")
                     
-                    print(f"\n  🔍 Verificando estado de la reserva...")
-                    boton_cancel = slot.query_selector('button.btn.btn-primary.btn-sm:has-text("Cancel")')
-                    
-                    if boton_cancel:
-                        print(f"  ✓ Slot {horario_texto} YA ESTÁ RESERVADO")
-                        print(f"  ✓ Botón 'Cancel' está visible - Reserva confirmada previamente")
-                        return True
-                    
-                    print(f"\n  🔍 Buscando botón 'Book' para reservar...")
-                    boton_book = slot.query_selector('button.btn.btn-primary:has-text("Book")')
-                    
-                    if boton_book:
-                        texto_boton = boton_book.inner_text().strip()
-                        print(f"  ✓ Botón encontrado: '{texto_boton}'")
+                    if hora_inicio_clase in horario_texto and hora_fin_clase in horario_texto:
+                        print(f"\n  ✓ ¡Slot correcto encontrado! {horario_texto}")
                         
-                        if 'Book' in texto_boton:
-                            print(f"\n  🖱️ Haciendo click en 'Book'...")
-                            boton_book.click()
-                            print(f"  ✓ Click en 'Book' realizado")
+                        print(f"\n  🔍 Verificando estado de la reserva...")
+                        boton_cancel = slot.query_selector('button.btn.btn-primary.btn-sm:has-text("Cancel")')
+                        
+                        if boton_cancel:
+                            print(f"  ✓ Slot {horario_texto} YA ESTÁ RESERVADO")
+                            print(f"  ✓ Botón 'Cancel' está visible - Reserva confirmada previamente")
+                            return True
+                        
+                        print(f"\n  🔍 Buscando botón 'Book' para reservar...")
+                        boton_book = slot.query_selector('button.btn.btn-primary:has-text("Book")')
+                        
+                        if boton_book:
+                            texto_boton = boton_book.inner_text().strip()
+                            print(f"  ✓ Botón encontrado: '{texto_boton}'")
                             
-                            print(f"\n  ⏳ Esperando ventana de confirmación...")
-                            try:
-                                page.wait_for_selector('button:has-text("Yes")', timeout=5000)
-                                print(f"  ✓ Ventana de confirmación apareció")
-                                page.click('button:has-text("Yes")')
-                                print(f"  ✓ Click en 'Yes' realizado")
-                            except Exception as e:
-                                print(f"  ⚠️ No apareció botón 'Yes': {e}")
-                            
-                            print(f"\n  ⏳ Esperando procesamiento...")
-                            page.wait_for_timeout(2000)
-                            
-                            print(f"\n  ⏳ Esperando actualización...")
-                            page.wait_for_timeout(1500)
+                            if 'Book' in texto_boton:
+                                print(f"\n  🖱️ Haciendo click en 'Book'...")
+                                boton_book.click()
+                                print(f"  ✓ Click en 'Book' realizado")
+                                
+                                print(f"\n  ⏳ Esperando ventana de confirmación...")
+                                try:
+                                    page.wait_for_selector('button:has-text("Yes")', timeout=5000)
+                                    print(f"  ✓ Ventana de confirmación apareció")
+                                    page.click('button:has-text("Yes")')
+                                    print(f"  ✓ Click en 'Yes' realizado")
+                                except Exception as e:
+                                    print(f"  ⚠️ No apareció botón 'Yes': {e}")
+                                
+                                print(f"\n  ⏳ Esperando procesamiento...")
+                                page.wait_for_timeout(3000)
+                                
+                                print(f"\n  ⏳ Esperando actualización...")
+                                page.wait_for_timeout(2000)
 
-                            print(f"\n  🔄 Verificando reserva...")
-                            slots_actualizados = page.query_selector_all('div.row.no-gutters.align-items-center')
-                            
-                            for j, slot_act in enumerate(slots_actualizados, 1):
-                                horario_element = slot_act.query_selector('p.font-weight-semibold.mb-0')
-                                if horario_element:
-                                    horario_texto_act = horario_element.inner_text().strip()
+                                print(f"\n  🔄 Verificando reserva...")
+                                # Re-obtener slots después de la acción
+                                slots_verificacion = obtener_slots()
+                                
+                                for j in range(len(slots_verificacion)):
+                                    try:
+                                        slot_act = slots_verificacion[j]
+                                        horario_element_act = slot_act.query_selector('p.font-weight-semibold.mb-0')
+                                        if horario_element_act:
+                                            horario_texto_act = horario_element_act.inner_text().strip()
 
-                                    if hora_inicio_clase in horario_texto_act and hora_fin_clase in horario_texto_act:
-                                        boton_cancel_verificacion = slot_act.query_selector('button.btn.btn-primary.btn-sm:has-text("Cancel")')
-                                        
-                                        if boton_cancel_verificacion:
-                                            print(f"\n  ✓✓✓ RESERVA CONFIRMADA - Botón 'Cancel' visible")
-                                            return True
-                                        else:
-                                            print(f"  ✗ Reserva no confirmada")
-                                            return False
+                                            if hora_inicio_clase in horario_texto_act and hora_fin_clase in horario_texto_act:
+                                                boton_cancel_verificacion = slot_act.query_selector('button.btn.btn-primary.btn-sm:has-text("Cancel")')
+                                                
+                                                if boton_cancel_verificacion:
+                                                    print(f"\n  ✓✓✓ RESERVA CONFIRMADA - Botón 'Cancel' visible")
+                                                    return True
+                                                else:
+                                                    print(f"  ✗ Reserva no confirmada")
+                                                    return False
+                                    except Exception as e:
+                                        print(f"  ⚠️ Error verificando slot {j+1}: {e}")
+                                        continue
+                            else:
+                                print(f"  ℹ️ Botón dice: '{texto_boton}'")
+                                return False
                         else:
-                            print(f"  ℹ️ Botón dice: '{texto_boton}'")
+                            print(f"  ✗ No hay botón 'Book' disponible")
                             return False
-                    else:
-                        print(f"  ✗ No hay botón 'Book' disponible")
-                        return False
+            except Exception as e:
+                print(f"  ⚠️ Error procesando slot {i+1}: {e}")
+                continue
         
         print(f"\n  ✗ No se encontró el slot {hora_inicio_clase} - {hora_fin_clase}")
         return False
         
     except Exception as e:
-        print(f"  ✗ Error: {str(e)}")
+        print(f"  ✗ Error general en reservar_slot: {str(e)}")
         return False
 
 def abrir_pagina():
@@ -132,7 +154,7 @@ def abrir_pagina():
         print("🌐 Lanzando navegador Chrome...")
         # Configuración optimizada para modo headless
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 '--disable-blink-features=AutomationControlled',  # Evitar detección de bot
                 '--disable-dev-shm-usage',  # Para evitar crashes
@@ -208,21 +230,18 @@ def abrir_pagina():
                 print("✓ Página de eventos cargada")
                 
                 print("\n⏳ Esperando resultados de búsqueda...")
-                page.wait_for_selector('#search-result', timeout=10000)
+                page.wait_for_selector('#search-result', timeout=15000)
                 # IMPORTANTE: Esperar más tiempo para que Angular cargue todo el contenido
-                page.wait_for_timeout(3000)
+                page.wait_for_timeout(5000)
                 # Esperar a que se carguen los elementos de la lista
-                page.wait_for_selector('.list-group-item', timeout=10000)
+                page.wait_for_selector('.list-group-item', timeout=15000)
                 print("✓ Resultados cargados")
                 
                 print("\n📅 Determinando horario según el día...")
                 horarios_por_dia = {
-                    6: ('21:00', '22:30'),  # Domingo
-                    0: ('18:00', '19:30'),  # Lunes
-                    1: ('12:00', '13:30'),  # Martes
-                    2: ('10:30', '12:00'),  # Miércoles
-                    3: ('19:30', '21:00'),  # Jueves
-                    4: ('12:00', '13:30'),  # Viernes
+                    
+                    3: ('21:00', '22:00'),  # Jueves
+                    
                 }
                 
                 hoy = datetime.now()
@@ -246,7 +265,7 @@ def abrir_pagina():
                 hora_inicio, hora_fin = horarios_por_dia[dia_semana]
                 print(f"✓ Horario de tu clase: {hora_inicio} - {hora_fin}")
                 
-                print(f"\n🔍 Buscando eventos de Fitnes para {fecha_hoy}...")
+                print(f"\n🔍 Buscando eventos de Plavanje na Fakulteti za šport para {fecha_hoy}...")
                 
                 def horario_coincide(hora_inicio_evento, hora_fin_evento, hora_inicio_clase, hora_fin_clase):
                     def a_minutos(hora_str):
@@ -266,7 +285,7 @@ def abrir_pagina():
                 # Scroll para asegurar que todos los eventos estén cargados
                 if len(eventos) > 0:
                     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(2000)
                     # Volver a capturar eventos después del scroll
                     eventos = page.query_selector_all('.list-group-item')
                     print(f"✓ Re-escaneados: {len(eventos)} eventos")
@@ -285,63 +304,73 @@ def abrir_pagina():
                         fecha = fecha_element.inner_text()
                         print(f"  Evento {i}: '{titulo}' - Fecha: '{fecha}'")
                 
-                print(f"\n🔍 Buscando evento de Fitnes para {fecha_hoy}...")
+                print(f"\n🔍 Buscando evento de Plavanje na Fakulteti za šport para {fecha_hoy}...")
                 
-                for i, evento in enumerate(eventos, 1):
-                    titulo_element = evento.query_selector('h2')
-                    fecha_element = evento.query_selector('._event-date-wrapper strong')
-                    
-                    if titulo_element and fecha_element:
-                        titulo = titulo_element.inner_text()
-                        fecha = fecha_element.inner_text()
-                        
-                        # Verificar si es un evento de Fitnes para hoy
-                        if 'Fitnes' in titulo and fecha == fecha_hoy:
-                            evento_fitnes_hoy_encontrado = True
-                            print(f"\n✓ Evento de Fitnes encontrado: '{titulo}' en {fecha}")
-                            horas_elements = evento.query_selector_all('._event-date-wrapper strong')
+                for i in range(len(eventos)):
+                    try:
+                        # Re-obtener eventos en cada iteración para evitar handles obsoletos
+                        eventos_actuales = page.query_selector_all('.list-group-item')
+                        if i >= len(eventos_actuales):
+                            continue
                             
-                            if len(horas_elements) >= 3:
-                                hora_inicio_evento = horas_elements[1].inner_text()
-                                hora_fin_evento = horas_elements[2].inner_text()
+                        evento = eventos_actuales[i]
+                        titulo_element = evento.query_selector('h2')
+                        fecha_element = evento.query_selector('._event-date-wrapper strong')
+                        
+                        if titulo_element and fecha_element:
+                            titulo = titulo_element.inner_text()
+                            fecha = fecha_element.inner_text()
+                            
+                            # Verificar si es un evento de natación para hoy
+                            if 'Plavanje Na Fakulteti Za Šport' in titulo and fecha == fecha_hoy:
+                                evento_fitnes_hoy_encontrado = True
+                                print(f"\n✓ Evento de Plavanje na Fakulteti za šport encontrado: '{titulo}' en {fecha}")
+                                horas_elements = evento.query_selector_all('._event-date-wrapper strong')
                                 
-                                if horario_coincide(hora_inicio_evento, hora_fin_evento, hora_inicio, hora_fin):
-                                    print(f"\n✓✓✓ EVENTO ENCONTRADO:")
-                                    print(f"  📋 {titulo}")
-                                    print(f"  📅 {fecha}")
-                                    print(f"  🕐 {hora_inicio_evento} - {hora_fin_evento}")
+                                if len(horas_elements) >= 3:
+                                    hora_inicio_evento = horas_elements[1].inner_text()
+                                    hora_fin_evento = horas_elements[2].inner_text()
                                     
-                                    print(f"\n🖱️ Abriendo el evento...")
-                                    enlace = evento.query_selector('a')
-                                    if enlace:
-                                        enlace.click()
-                                        eventos_encontrados += 1
-                                        print(f"✓ Evento abierto")
+                                    if horario_coincide(hora_inicio_evento, hora_fin_evento, hora_inicio, hora_fin):
+                                        print(f"\n✓✓✓ EVENTO ENCONTRADO:")
+                                        print(f"  📋 {titulo}")
+                                        print(f"  📅 {fecha}")
+                                        print(f"  🕐 {hora_inicio_evento} - {hora_fin_evento}")
                                         
-                                        print(f"\n⏳ Esperando carga...")
-                                        page.wait_for_timeout(3000)
-                                        
-                                        print(f"\n🎯 Intentando reservar...")
-                                        if reservar_slot(page, hora_inicio, hora_fin):
-                                            print("\n" + "="*60)
-                                            print("🎉🎉🎉 ¡RESERVA COMPLETADA! 🎉🎉🎉")
-                                            print("="*60 + "\n")
-                                            print(f"✓ Clase reservada: {hora_inicio} - {hora_fin}")
-                                            print(f"✓ Fecha: {fecha}")
-                                            print(f"✓ Intentos realizados: {intento_actual}")
-                                            print("\n🚪 Cerrando navegador...")
-                                            page.wait_for_timeout(3000)
-                                            context.close()
-                                            browser.close()
-                                            return  # ¡ÉXITO! Terminar el script
-                                        else:
-                                            print("\n  ✗ No se pudo completar la reserva")
-                                            print("  🔄 Continuando búsqueda...")
-                                            break
+                                        print(f"\n🖱️ Abriendo el evento...")
+                                        enlace = evento.query_selector('a')
+                                        if enlace:
+                                            enlace.click()
+                                            eventos_encontrados += 1
+                                            print(f"✓ Evento abierto")
+                                            
+                                            print(f"\n⏳ Esperando carga...")
+                                            page.wait_for_timeout(5000)
+                                            
+                                            print(f"\n🎯 Intentando reservar...")
+                                            if reservar_slot(page, hora_inicio, hora_fin):
+                                                print("\n" + "="*60)
+                                                print("🎉🎉🎉 ¡RESERVA COMPLETADA! 🎉🎉🎉")
+                                                print("="*60 + "\n")
+                                                print(f"✓ Clase reservada: {hora_inicio} - {hora_fin}")
+                                                print(f"✓ Fecha: {fecha}")
+                                                print(f"✓ Intentos realizados: {intento_actual}")
+                                                print("\n🚪 Cerrando navegador...")
+                                                page.wait_for_timeout(3000)
+                                                context.close()
+                                                browser.close()
+                                                return  # ¡ÉXITO! Terminar el script
+                                            else:
+                                                print("\n  ✗ No se pudo completar la reserva")
+                                                print("  🔄 Continuando búsqueda...")
+                                                break
+                    except Exception as e:
+                        print(f"  ⚠️ Error procesando evento {i+1}: {e}")
+                        continue
                 
                 # Resultado del intento
                 if not evento_fitnes_hoy_encontrado:
-                    print(f"\n⚠️ No se encontró evento de Fitnes para {fecha_hoy}")
+                    print(f"\n⚠️ No se encontró evento de Plavanje na Fakulteti za šport para {fecha_hoy}")
                     print(f"💡 Los eventos podrían publicarse en los próximos minutos...")
                     
                     # DEBUG: Guardar screenshot para ver qué está viendo el navegador
