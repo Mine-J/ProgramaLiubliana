@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
 import time
+import traceback
 
 load_dotenv()
 
@@ -24,12 +25,17 @@ def esperar_hasta_hora_apertura():
 def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
     """Busca y reserva el slot de horario específico"""
     try:
+        print(f"\n  📋 [reservar_slot] Inicio de proceso")
+        print(f"  📋 [reservar_slot] Objetivo: {hora_inicio_clase} - {hora_fin_clase}")
+        print(f"  🌐 [reservar_slot] URL actual antes de buscar bookings: {page.url}")
         print(f"\n  📋 Esperando a que cargue la sección de bookings...")
         page.wait_for_selector('#bookings', timeout=10000)
         page.wait_for_timeout(2000)  # Espera adicional para carga completa
         print(f"  ✓ Sección de bookings cargada")
+        print(f"  🌐 [reservar_slot] URL actual después de cargar bookings: {page.url}")
         
         print(f"\n  🔍 Buscando slot de horario {hora_inicio_clase} - {hora_fin_clase}...")
+        
         
         # Re-obtener slots cada vez para evitar elementos obsoletos
         def obtener_slots():
@@ -37,13 +43,19 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
         
         slots = obtener_slots()
         print(f"  ✓ Se encontraron {len(slots)} slots en total")
+        if len(slots) == 0:
+            print("  ⚠️ [reservar_slot] No hay slots visibles en #bookings en este momento")
         
         print(f"\n  🔄 Revisando cada slot...")
         for i in range(len(slots)):
             try:
+                print(f"\n  ------------------------------------------------------------")
+                print(f"  🔎 [slot-loop] Iteración {i+1}/{len(slots)}")
                 # Re-obtener slots en cada iteración para evitar handles obsoletos
                 slots_actuales = obtener_slots()
+                print(f"  📊 [slot-loop] Slots visibles ahora: {len(slots_actuales)}")
                 if i >= len(slots_actuales):
+                    print(f"  ⚠️ [slot-loop] Índice {i} fuera de rango tras recarga, se omite")
                     continue
                     
                 slot = slots_actuales[i]
@@ -52,12 +64,15 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
                 if horario_element:
                     horario_texto = horario_element.inner_text().strip()
                     print(f"  • Slot {i+1}: {horario_texto}")
+                    print(f"  🔍 [slot-loop] ¿Contiene hora inicio '{hora_inicio_clase}'?: {hora_inicio_clase in horario_texto}")
+                    print(f"  🔍 [slot-loop] ¿Contiene hora fin '{hora_fin_clase}'?: {hora_fin_clase in horario_texto}")
                     
                     if hora_inicio_clase in horario_texto and hora_fin_clase in horario_texto:
                         print(f"\n  ✓ ¡Slot correcto encontrado! {horario_texto}")
                         
                         print(f"\n  🔍 Verificando estado de la reserva...")
                         boton_cancel = slot.query_selector('button.btn.btn-primary.btn-sm:has-text("Cancel")')
+                        print(f"  🔎 [slot-loop] Botón 'Cancel' encontrado: {boton_cancel is not None}")
                         
                         if boton_cancel:
                             print(f"  ✓ Slot {horario_texto} YA ESTÁ RESERVADO")
@@ -66,6 +81,7 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
                         
                         print(f"\n  🔍 Buscando botón 'Book' para reservar...")
                         boton_book = slot.query_selector('button.btn.btn-primary:has-text("Book")')
+                        print(f"  🔎 [slot-loop] Botón 'Book' encontrado: {boton_book is not None}")
                         
                         if boton_book:
                             texto_boton = boton_book.inner_text().strip()
@@ -75,6 +91,7 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
                                 print(f"\n  🖱️ Haciendo click en 'Book'...")
                                 boton_book.click()
                                 print(f"  ✓ Click en 'Book' realizado")
+                                print(f"  🌐 [slot-loop] URL tras click en Book: {page.url}")
                                 
                                 print(f"\n  ⏳ Esperando ventana de confirmación...")
                                 try:
@@ -84,16 +101,20 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
                                     print(f"  ✓ Click en 'Yes' realizado")
                                 except Exception as e:
                                     print(f"  ⚠️ No apareció botón 'Yes': {e}")
+                                    print("  ⚠️ Traceback ventana confirmación:")
+                                    print(traceback.format_exc())
                                 
                                 print(f"\n  ⏳ Esperando procesamiento...")
                                 page.wait_for_timeout(3000)
                                 
                                 print(f"\n  ⏳ Esperando actualización...")
                                 page.wait_for_timeout(2000)
+                                print(f"  🌐 [slot-loop] URL antes de verificar reserva: {page.url}")
 
                                 print(f"\n  🔄 Verificando reserva...")
                                 # Re-obtener slots después de la acción
                                 slots_verificacion = obtener_slots()
+                                print(f"  📊 [verificacion] Slots detectados para verificar: {len(slots_verificacion)}")
                                 
                                 for j in range(len(slots_verificacion)):
                                     try:
@@ -101,34 +122,51 @@ def reservar_slot(page, hora_inicio_clase, hora_fin_clase):
                                         horario_element_act = slot_act.query_selector('p.font-weight-semibold.mb-0')
                                         if horario_element_act:
                                             horario_texto_act = horario_element_act.inner_text().strip()
+                                            print(f"  • [verificacion] Slot {j+1}: {horario_texto_act}")
 
                                             if hora_inicio_clase in horario_texto_act and hora_fin_clase in horario_texto_act:
+                                                print(f"  ✓ [verificacion] Slot objetivo localizado en posición {j+1}")
                                                 boton_cancel_verificacion = slot_act.query_selector('button.btn.btn-primary.btn-sm:has-text("Cancel")')
+                                                print(f"  🔎 [verificacion] Botón 'Cancel' visible: {boton_cancel_verificacion is not None}")
                                                 
                                                 if boton_cancel_verificacion:
                                                     print(f"\n  ✓✓✓ RESERVA CONFIRMADA - Botón 'Cancel' visible")
                                                     return True
                                                 else:
                                                     print(f"  ✗ Reserva no confirmada")
+                                                    print("  ✗ [verificacion] No apareció 'Cancel' en el slot objetivo tras reservar")
                                                     return False
+                                        else:
+                                            print(f"  ⚠️ [verificacion] Slot {j+1} sin elemento de horario")
                                     except Exception as e:
                                         print(f"  ⚠️ Error verificando slot {j+1}: {e}")
+                                        print("  ⚠️ Traceback verificando slot:")
+                                        print(traceback.format_exc())
                                         continue
                             else:
                                 print(f"  ℹ️ Botón dice: '{texto_boton}'")
+                                print("  ℹ️ [slot-loop] El botón encontrado no contiene la palabra 'Book' exacta")
                                 return False
                         else:
                             print(f"  ✗ No hay botón 'Book' disponible")
+                            print("  ✗ [slot-loop] El slot existe pero no se puede reservar por ahora")
                             return False
+                else:
+                    print(f"  ⚠️ [slot-loop] Slot {i+1} no contiene el elemento de horario esperado")
             except Exception as e:
                 print(f"  ⚠️ Error procesando slot {i+1}: {e}")
+                print("  ⚠️ Traceback procesando slot:")
+                print(traceback.format_exc())
                 continue
         
         print(f"\n  ✗ No se encontró el slot {hora_inicio_clase} - {hora_fin_clase}")
+        print(f"  🌐 [reservar_slot] URL al finalizar sin éxito: {page.url}")
         return False
         
     except Exception as e:
         print(f"  ✗ Error general en reservar_slot: {str(e)}")
+        print("  ✗ Traceback general en reservar_slot:")
+        print(traceback.format_exc())
         return False
 
 def abrir_pagina():
@@ -137,7 +175,7 @@ def abrir_pagina():
     print("\n" + "="*60)
     print("FASE 1: VERIFICACIÓN DE HORA DE APERTURA")
     print("="*60)
-    esperar_hasta_hora_apertura()
+    
     
     print("\n" + "="*60)
     print("FASE 2: CONFIGURACIÓN INICIAL")
@@ -340,6 +378,7 @@ def abrir_pagina():
                                         print(f"\n🖱️ Abriendo el evento...")
                                         enlace = evento.query_selector('a')
                                         if enlace:
+                                            esperar_hasta_hora_apertura()
                                             enlace.click()
                                             eventos_encontrados += 1
                                             print(f"✓ Evento abierto")
