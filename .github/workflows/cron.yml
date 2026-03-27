@@ -3,7 +3,7 @@ name: Reservas Gym
 on:
   schedule:
     # Jueves
-    - cron: "30 3 * * 4"
+    - cron: "00 3 * * 4"
 
   # Permite lanzarlo manualmente desde GitHub (Actions → Run workflow)
   workflow_dispatch:
